@@ -203,12 +203,17 @@ class user extends ApiObject {
   	$pc = $uc = 0;
   	foreach ($t AS $key => $value) {
   	  if ($value) {
+  	  	// Get the containing table for this field
   	  	$table = $d->getContainingTable($key);
+  	  	// Get the alias for this field.
   	  	$alias = $d->getAlias($key);
+
+  	  	// If it's a profile field, make sure to format it correctly.
   	  	if ($table == 'profile') {
   	  	  $profile->{$alias}[LANGUAGE_NONE][0]['value'] = $value;
   	  	  $pc++;
   	  	}
+  	  	// If it's a user field, it's just a user object property.
   	  	else if ($table == 'user') {
   	  	  $user->{$alias} = $value;
   	  	  $uc++;
@@ -216,17 +221,28 @@ class user extends ApiObject {
   	  }
   	}
 
+  	// If there are profile field changes, save the new profile
+  	// then update the user->profile sub-class.
   	if ($pc > 0) {
   	  $profile->save();
   	  $user->profile = $profile;
   	}
+
+  	// If there are user field changes, save the new user object.
   	if ($uc > 0) {
   	  user_save($user);
   	}
 
+  	// Return the user object.
   	return $user;
   }
 
+  /**
+   *  Standard CRUD functions: delete
+   *  Gets user information from context, then deletes the user.
+   *
+   *  @return boolean true
+   */
   public function delete() {
   	$user = $this->_get_user();
 

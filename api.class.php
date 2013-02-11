@@ -3,8 +3,8 @@
 /**
  *  DoSomething internal API class
  *
- *	The DoSomething internal API allows developers of DoSomething.org to easily
- *	access and manage information across the site.  The API class centralizes core
+ *  The DoSomething internal API allows developers of DoSomething.org to easily
+ *  access and manage information across the site.  The API class centralizes core
  *  functionality into one place for sustainability, portability, and abstractability.
  *
  *	The API is a class with chain-able methods, and can be called in the following manner:
@@ -12,17 +12,17 @@
  *  @example Change's a user's mobile number
  *
  *  $api = new Api();
- *	$api->get('user')
- *	  ->context('mail', 'so-and-so@test.com')
- *	  ->set('mobile', '212-867-5309')
- *	  ->change();
+ *  $api->get('user')
+ *    ->context('mail', 'so-and-so@test.com')
+ *    ->set('mobile', '212-867-5309')
+ *    ->change();
  *
  *  The above will find a user with the email so-and-so@test.com and set their phone number
  *  as 212-867-5309.  That's all that's needed!
  *
  *  The API has standard CRUD endpoint methods:
  *    * create()   (create)
- *	  * get()      (read)
+ *    * get()      (read)
  *    * update()   (update)
  *    * remove()   (delete)
  *
@@ -57,13 +57,13 @@ class Api {
     *	 Returns the API class for the requested object.
     */
    public function __construct($object = '') {
-   	  // Loads the documentation helper.
-  	  if (!$this->doc) {
-	    require_once $this->api_dir . '/helpers/doc.inc';
-	    $this->doc = new DocHelper;
-	  }
+      // Loads the documentation helper.
+      if (!$this->doc) {
+        require_once $this->api_dir . '/helpers/doc.inc';
+        $this->doc = new DocHelper;
+      }
 
-	  // If we're calling the class with an object, instatiate the get() method.
+      // If we're calling the class with an object, instatiate the get() method.
       if (!empty($object)) {
       	return $this->load($object);
       }
@@ -80,32 +80,32 @@ class Api {
     *    The requested API object.
     */
    public function load($object) {
-   	 // Load the API object.
-  	 require_once $this->api_dir . '/objects/' . $object . '.api.php';
+      // Load the API object.
+      require_once $this->api_dir . '/objects/' . $object . '.api.php';
 
-  	 // Set the "loaded" parameter to the current object.
-  	 $this->loaded = $object;
+      // Set the "loaded" parameter to the current object.
+      $this->loaded = $object;
 
-  	 // Get comments and parse them.
-     $reflector = new ReflectionClass($object);
-     $c = $reflector->getProperties();
-     foreach ($c AS $key => $property) {
+      // Get comments and parse them.
+      $reflector = new ReflectionClass($object);
+      $c = $reflector->getProperties();
+      foreach ($c AS $key => $property) {
         $p = $property->getDocComment();
         $this->_build_column_info($property->class, $property->name, $p);
-     }
+      }
 
-     // Load the object if it doesn't exist already
-     if (!$this->$object) {
-	     $o = new $object();
-	     // Make sure the doc helper is within the scope of the object.
-	     $o->doc = $this->doc;
-	     $o->loaded = $this->loaded;
+      // Load the object if it doesn't exist already
+      if (!$this->$object) {
+        $o = new $object();
+        // Make sure the doc helper is within the scope of the object.
+        $o->doc = $this->doc;
+        $o->loaded = $this->loaded;
 
-	     $this->$object = $o;
-	 }
+        $this->$object = $o;
+      }
 
-	 // Return the object.
- 	 return $this->$object;
+      // Return the object.
+      return $this->$object;
    }
 
    // Loads the doc helper.
@@ -355,17 +355,56 @@ class Api {
    }
 }
 
+/**
+ *  Abstracted class for API objects -- please extend this class in your objects.
+ *  This sets up the basic functionality for API calls.
+ */
 abstract class ApiObject extends Api {
+   /**
+    *  set() parameter for use with create() and update().
+    *
+    *  @param string $key
+    *    The key (e.g. "mobile") to pass into the property.
+    *
+    *  @param string $val
+    *    The value (e.g. "212-867-5309") to pass to the property.
+    *
+    *  @return object
+    *    Returns the current object for method chaining.
+    */
    public function set($key, $val) {
    	 $this->add_property($key, $val, false);
    	 return $this;
    }
 
+   /**
+    *  context() parameter for use with get(), update() and remove().
+    *  This method passes all variables into the "context" sub-object.
+    *
+    *  @param string $key
+    *    The key (e.g. "mobile") to pass into the property.
+    *
+    *  @param string $val
+    *    The value (e.g. "212-867-5309") to pass to the property.
+    *
+    *  @return object
+    *    Returns the current object for method chaining.
+    */
    public function context($key, $val) {
    	 $this->add_property($key, $val, true);
    	 return $this;
    }
 
+   /**
+    *  Standard CRUD function: create() -- aka "create"
+    *  Checks validity of fields and builds the requested object.
+    *
+    *  @see Api::_check_entities
+    *  @see current object build()
+    *
+    *  @return object
+    *    Returns the current object for method chaining.
+    */
    public function create() {
    	 $this->_check_entities();
 
@@ -373,6 +412,16 @@ abstract class ApiObject extends Api {
    	 return $this->build();
    }
 
+   /**
+    *  Standard CRUD function: get() -- aka "read"
+    *  Checks validity of fields and returns the requested data.
+    *
+    *  @see Api::_check_entities
+    *  @see current object fetch()
+    *
+    *  @return object
+    *    Returns the current object for method chaining.
+    */
    public function get() {
    	 $this->_check_entities();
 
@@ -380,6 +429,16 @@ abstract class ApiObject extends Api {
    	 return $this->fetch();
    }
 
+   /**
+    *  Standard CRUD function: update() -- aka "update"
+    *  Checks validity of fields and updates the requested data.
+    *
+    *  @see Api::_check_entities
+    *  @see current object change()
+    *
+    *  @return object
+    *    Returns the current object for method chaining.
+    */
    public function update() {
    	 $this->_check_entities();
 
@@ -387,6 +446,16 @@ abstract class ApiObject extends Api {
    	 return $this->change();
    }
 
+   /**
+    *  Standard CRUD function: remove() -- aka "delete"
+    *  Checks validity of fields and removes the requested data.
+    *
+    *  @see Api::_check_entities
+    *  @see current object fetch()
+    *
+    *  @return object
+    *    Returns the current object for method chaining.
+    */
    public function remove() {
    	 $this->_check_entities();
 
@@ -394,12 +463,19 @@ abstract class ApiObject extends Api {
    	 return $this->delete();
    }
 
+   /**
+    *  @method build() Run from "create"
+    *  @method fetch() Run from "get"
+    *  @method change() Run from "update"
+    *  @method delete() Run from "remove"
+    */
    abstract public function build();
    abstract public function fetch();
    abstract public function change();
    abstract public function delete();
 }
 
+// Api Exception class
 class ApiException extends Exception {}
 
 ?>
